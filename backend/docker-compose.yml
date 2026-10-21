@@ -1,32 +1,47 @@
+version: '3.8'
+
 services:
-  db:
-    image: mysql:8
+  mysql:
+    image: mysql:8.0
+    container_name: placement_mysql
+    restart: always
     environment:
-      MYSQL_DATABASE: placement_db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-placement_db}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
     volumes:
-      - dbdata:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
       interval: 10s
-      retries: 10
+      timeout: 5s
+      retries: 5
 
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: placement_backend
+    restart: always
     ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
+      - "${PORT:-8080}:${PORT:-8080}"
+    env_file:
+      - .env
     environment:
-      SPRING_PROFILES_ACTIVE: prod
-      DB_URL: jdbc:mysql://db:3306/placement_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      DB_USERNAME: root
+      PORT: ${PORT:-8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_URL: ${DB_URL:-jdbc:mysql://mysql:3306/placement_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+      DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       AI_PROVIDER: ${AI_PROVIDER:-openai}
       AI_API_KEY: ${AI_API_KEY}
       AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1/chat/completions}
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
-  dbdata:
+  mysql_data:

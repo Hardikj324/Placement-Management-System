@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * TC-QC-06  GET  /api/questions/{id}     unknown id      → 404
  */
 @WebMvcTest(QuestionBankController.class)
-@Import({SecurityConfig.class, com.placement.config.CorsConfig.class})
+@Import(SecurityConfig.class)
 @DisplayName("QuestionBankController MockMvc Tests")
 class QuestionBankControllerTest {
 
@@ -43,18 +43,8 @@ class QuestionBankControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockBean private QuestionBankService questionBankService;
-    @MockBean private com.placement.security.JwtFilter jwtFilter;
-    @MockBean private com.placement.security.JwtService jwtService;
-    @MockBean private com.placement.security.CustomUserDetailsService customUserDetailsService;
-
-    @org.junit.jupiter.api.BeforeEach
-    void setUp() throws Exception {
-        org.mockito.Mockito.doAnswer(invocation -> {
-            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
-            chain.doFilter(invocation.getArgument(0), invocation.getArgument(1));
-            return null;
-        }).when(jwtFilter).doFilter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
-    }
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
     private QuestionResponse sampleResponse() {
         return QuestionResponse.builder()

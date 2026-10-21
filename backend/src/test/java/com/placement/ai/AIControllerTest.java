@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * TC-AC-08  POST /resume/analyze  file > 5MB (extractor throws) → 400
  */
 @WebMvcTest(AIController.class)
-@Import({SecurityConfig.class, com.placement.config.CorsConfig.class})
+@Import(SecurityConfig.class)
 @DisplayName("AIController MockMvc Tests")
 class AIControllerTest {
 
@@ -51,20 +51,13 @@ class AIControllerTest {
     @MockBean private PreparationPlanner preparationPlanner;
 
     // Spring Security wiring stubs (needed by SecurityConfig)
-    @MockBean private com.placement.security.JwtFilter jwtFilter;
-    @MockBean private com.placement.security.JwtService jwtService;
-    @MockBean private com.placement.security.CustomUserDetailsService customUserDetailsService;
+    @MockBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() throws Exception {
-        org.mockito.Mockito.doAnswer(invocation -> {
-            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
-            chain.doFilter(invocation.getArgument(0), invocation.getArgument(1));
-            return null;
-        }).when(jwtFilter).doFilter(any(), any(), any());
-
+    void setUp() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(

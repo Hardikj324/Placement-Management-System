@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(ResourceNotFoundException ex) {
-        return new ResponseEntity<>(ApiResponse.failure(HttpStatus.NOT_FOUND.value(), ex.getMessage()), HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(ApiResponse.failure(ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -29,39 +29,25 @@ public class GlobalExceptionHandler {
         }
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .success(false)
-                .status(HttpStatus.BAD_REQUEST.value())
                 .message("Validation failed")
                 .data(errors)
-                .fieldErrors(errors)
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadCredentials(BadCredentialsException ex) {
-        return new ResponseEntity<>(ApiResponse.failure(HttpStatus.UNAUTHORIZED.value(), "Invalid email or password"), HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(ApiResponse.failure("Invalid email or password"), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException ex) {
-        return new ResponseEntity<>(ApiResponse.failure(HttpStatus.FORBIDDEN.value(), "You do not have permission to access this resource"), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(ApiResponse.failure("You do not have permission to access this resource"), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Object>> handleIllegalArgument(IllegalArgumentException ex) {
-        return new ResponseEntity<>(ApiResponse.failure(HttpStatus.BAD_REQUEST.value(), ex.getMessage()), HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(com.placement.ai.exception.AiServiceException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAiServiceException(com.placement.ai.exception.AiServiceException ex) {
-        HttpStatus status = switch (ex.getErrorType()) {
-            case CLIENT_ERROR      -> HttpStatus.BAD_GATEWAY;
-            case SERVER_ERROR      -> HttpStatus.BAD_GATEWAY;
-            case TIMEOUT           -> HttpStatus.GATEWAY_TIMEOUT;
-            case RETRIES_EXHAUSTED  -> HttpStatus.SERVICE_UNAVAILABLE;
-            case INVALID_RESPONSE  -> HttpStatus.UNPROCESSABLE_ENTITY;
-        };
-        return new ResponseEntity<>(ApiResponse.failure(status.value(), "AI service error: " + ex.getMessage()), status);
+        return new ResponseEntity<>(ApiResponse.failure(ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
