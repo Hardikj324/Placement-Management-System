@@ -1,32 +1,58 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, UserCheck, GraduationCap, Briefcase, Award } from 'lucide-react';
+
+import {
+  GraduationCap,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertCircle,
+  Info,
+  ShieldCheck,
+  UserCheck,
+  Briefcase,
+  Award,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react';
+
 import ThemeToggle from '../../components/common/ThemeToggle';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const isRegistered = searchParams.get('registered') === 'true';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotInfo, setShowForgotInfo] = useState(false);
 
+  // Redirect users according to their roles
   const routeUserByRole = (role) => {
     switch (role) {
       case 'ROLE_ADMIN':
         navigate('/admin/dashboard');
         break;
+
       case 'ROLE_OFFICER':
       case 'ROLE_PLACEMENT_OFFICER':
         navigate('/placement/dashboard');
         break;
+
       case 'ROLE_FACULTY':
         navigate('/faculty/dashboard');
         break;
+
       case 'ROLE_HOD':
         navigate('/hod/dashboard');
         break;
+
       case 'ROLE_STUDENT':
       default:
         navigate('/student/dashboard');
@@ -34,26 +60,45 @@ export default function Login() {
     }
   };
 
+  // Normal login
   const handleSubmit = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
+    e.preventDefault();
+
     setError('');
+    setShowForgotInfo(false);
+
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const user = await login(email, password);
+      const user = await login(email.trim(), password);
       routeUserByRole(user.role);
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(
+        err.message || 'Login failed. Please check your credentials.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // Demo login
   const handleQuickLogin = async (demoEmail, demoPass) => {
     setEmail(demoEmail);
     setPassword(demoPass);
     setError('');
+    setShowForgotInfo(false);
     setLoading(true);
+
     try {
       const user = await login(demoEmail, demoPass);
       routeUserByRole(user.role);
@@ -65,282 +110,358 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.ambientGlowTop} />
-      <div style={styles.ambientGlowBottom} />
-      <div style={styles.themeToggleContainer}>
-        <ThemeToggle showLabel />
-      </div>
-      <div style={styles.card}>
-        <div style={styles.logoBadge}>
-          <GraduationCap size={28} color="#6366f1" />
-        </div>
-        <h2 style={styles.title}>JECRC Placement Portal</h2>
-        <p style={styles.subtitle}>Sign in to access your role-based portal</p>
+    <div className="auth-split-wrapper">
 
-        {error && <div style={styles.error}>{error}</div>}
+      {/* LEFT SECTION: Branding */}
+      <div className="auth-split-left">
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Email Address</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="user@placement.edu"
-              style={styles.input}
-            />
+        <div className="auth-split-left-bg-pattern" />
+        <div className="auth-split-left-glow-top" />
+        <div className="auth-split-left-glow-bottom" />
+
+        {/* Brand Header */}
+        <div className="auth-brand-badge">
+          <div className="auth-brand-icon-box">
+            <GraduationCap size={24} color="#60a5fa" />
           </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={styles.input}
-            />
-          </div>
-
-          <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        {/* Quick Demo Sign-in Selector for Demo */}
-        <div style={styles.demoSection}>
-          <div style={styles.demoHeader}>
-            <span style={styles.demoTitle}>QUICK DEMO SIGN-IN (OCT 23 DEMO)</span>
-          </div>
-          <div style={styles.demoGrid}>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('student@placement.edu', 'student123')}
-              style={styles.demoBtn}
-            >
-              <GraduationCap size={14} color="#60a5fa" />
-              <span>Student (Aarav)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('officer@placement.edu', 'officer123')}
-              style={styles.demoBtn}
-            >
-              <Briefcase size={14} color="#34d399" />
-              <span>Placement Officer</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('faculty@placement.edu', 'faculty123')}
-              style={styles.demoBtn}
-            >
-              <UserCheck size={14} color="#c084fc" />
-              <span>Faculty (Coordinator)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('hod@placement.edu', 'hod123')}
-              style={styles.demoBtn}
-            >
-              <Award size={14} color="#fbbf24" />
-              <span>HOD (CSE)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin@placement.edu', 'admin123')}
-              style={{ ...styles.demoBtn, gridColumn: 'span 2' }}
-            >
-              <ShieldCheck size={14} color="#f87171" />
-              <span>System Administrator</span>
-            </button>
+          <div className="auth-brand-name">
+            JECRC Foundation
           </div>
         </div>
 
-        <p style={styles.footer}>
-          Don't have an account?{' '}
-          <Link to="/register" style={styles.link}>
-            Register here
-          </Link>
-        </p>
+        {/* Hero Content */}
+        <div className="auth-brand-hero">
+
+          <h1 className="auth-hero-heading">
+            JECRC Placement Portal
+          </h1>
+
+          <div className="auth-tagline">
+            <Sparkles size={16} />
+            <span>Campus Recruitment Made Easy</span>
+          </div>
+
+          <p className="auth-supporting-desc">
+            Connecting students, recruiters and institutions through
+            one unified placement platform.
+          </p>
+
+          {/* Features */}
+          <div className="auth-feature-bullets">
+
+            <div className="auth-bullet-item">
+              <div className="auth-bullet-dot">
+                <CheckCircle2 size={13} />
+              </div>
+
+              <span className="auth-bullet-text">
+                Verified student talent and automated eligibility checks
+              </span>
+            </div>
+
+            <div className="auth-bullet-item">
+              <div className="auth-bullet-dot">
+                <CheckCircle2 size={13} />
+              </div>
+
+              <span className="auth-bullet-text">
+                Streamlined recruitment drives and interview workflows
+              </span>
+            </div>
+
+            <div className="auth-bullet-item">
+              <div className="auth-bullet-dot">
+                <CheckCircle2 size={13} />
+              </div>
+
+              <span className="auth-bullet-text">
+                Comprehensive campus placement metrics and reports
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="auth-split-left-footer">
+          <div className="auth-footer-text">
+            © 2026 JECRC Foundation • Training & Placement Cell (TPO)
+          </div>
+        </div>
+
       </div>
+
+      {/* RIGHT SECTION: Login Form */}
+      <div className="auth-split-right">
+
+        {/* Theme Toggle */}
+        <div className="auth-theme-toggle-corner">
+          <ThemeToggle />
+        </div>
+
+        <div className="auth-form-wrapper">
+
+          {/* Form Header */}
+          <div className="auth-form-header">
+            <h2 className="auth-form-title">
+              Sign in
+            </h2>
+
+            <p className="auth-form-subtitle">
+              Enter your credentials below
+            </p>
+          </div>
+
+          {/* Registration Success */}
+          {isRegistered && (
+            <div className="auth-alert auth-alert-success">
+              <CheckCircle2
+                size={18}
+                style={{ flexShrink: 0, marginTop: '1px' }}
+              />
+
+              <div>
+                Account created successfully! Please sign in with
+                your credentials.
+              </div>
+            </div>
+          )}
+
+          {/* Forgot Password Information */}
+          {showForgotInfo && (
+            <div className="auth-alert auth-alert-info">
+              <Info
+                size={18}
+                style={{ flexShrink: 0, marginTop: '1px' }}
+              />
+
+              <div>
+                To reset your password, please contact the Placement
+                Office at <strong>placement@jecrc.ac.in</strong> or
+                reach out to your department coordinator.
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="auth-alert auth-alert-danger">
+              <AlertCircle
+                size={18}
+                style={{ flexShrink: 0, marginTop: '1px' }}
+              />
+
+              <div>{error}</div>
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} noValidate>
+
+            {/* Email */}
+            <div className="auth-field-group">
+
+              <label htmlFor="login-email" className="auth-label">
+                Email address
+              </label>
+
+              <input
+                id="login-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@jecrc.ac.in"
+                className="auth-text-input"
+                autoComplete="email"
+                disabled={loading}
+              />
+
+            </div>
+
+            {/* Password */}
+            <div className="auth-field-group">
+
+              <div className="auth-label-row">
+
+                <label
+                  htmlFor="login-password"
+                  className="auth-label"
+                >
+                  Password
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setShowForgotInfo(!showForgotInfo)}
+                  className="auth-forgot-btn"
+                >
+                  Forgot password?
+                </button>
+
+              </div>
+
+              <div className="auth-input-container">
+
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="auth-text-input"
+                  style={{ paddingRight: '44px' }}
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={
+                    showPassword ? 'Hide password' : 'Show password'
+                  }
+                  className="auth-password-toggle"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="auth-submit-btn"
+            >
+              <span>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </span>
+
+              {!loading && <ArrowRight size={16} />}
+            </button>
+
+          </form>
+
+          {/* Registration Link */}
+          <p className="auth-footer-prompt">
+            Don't have an account?{' '}
+
+            <Link
+              to="/register"
+              className="auth-register-link"
+            >
+              Register here
+            </Link>
+          </p>
+
+          {/* Developer Demo Login */}
+          <div className="auth-dev-section">
+
+            <details className="auth-dev-details">
+
+              <summary className="auth-dev-summary">
+                <ShieldCheck size={14} />
+
+                <span>
+                  Developer Quick Access (Demo Roles)
+                </span>
+              </summary>
+
+              <div className="auth-dev-grid">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      'student@placement.edu',
+                      'student123'
+                    )
+                  }
+                  className="auth-dev-chip"
+                  disabled={loading}
+                >
+                  <GraduationCap size={14} color="#60a5fa" />
+                  <span>Student (Aarav)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      'officer@placement.edu',
+                      'officer123'
+                    )
+                  }
+                  className="auth-dev-chip"
+                  disabled={loading}
+                >
+                  <Briefcase size={14} color="#34d399" />
+                  <span>Placement Officer</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      'faculty@placement.edu',
+                      'faculty123'
+                    )
+                  }
+                  className="auth-dev-chip"
+                  disabled={loading}
+                >
+                  <UserCheck size={14} color="#c084fc" />
+                  <span>Faculty Coordinator</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      'hod@placement.edu',
+                      'hod123'
+                    )
+                  }
+                  className="auth-dev-chip"
+                  disabled={loading}
+                >
+                  <Award size={14} color="#fbbf24" />
+                  <span>HOD (CSE)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleQuickLogin(
+                      'admin@placement.edu',
+                      'admin123'
+                    )
+                  }
+                  className="auth-dev-chip"
+                  style={{ gridColumn: 'span 2' }}
+                  disabled={loading}
+                >
+                  <ShieldCheck size={14} color="#f87171" />
+                  <span>System Administrator</span>
+                </button>
+
+              </div>
+            </details>
+
+          </div>
+
+        </div>
+      </div>
+
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'var(--bg-main)',
-    color: 'var(--text-primary)',
-    fontFamily: 'var(--font-sans)',
-    padding: '24px',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  ambientGlowTop: {
-    position: 'absolute',
-    top: '-15%',
-    left: '20%',
-    width: '500px',
-    height: '500px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%)',
-    pointerEvents: 'none',
-    zIndex: 0,
-  },
-  ambientGlowBottom: {
-    position: 'absolute',
-    bottom: '-15%',
-    right: '15%',
-    width: '500px',
-    height: '500px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%)',
-    pointerEvents: 'none',
-    zIndex: 0,
-  },
-  themeToggleContainer: {
-    position: 'absolute',
-    top: '20px',
-    right: '24px',
-    zIndex: 10,
-  },
-  card: {
-    width: '100%',
-    maxWidth: '460px',
-    background: 'var(--bg-card)',
-    padding: '36px',
-    borderRadius: '20px',
-    boxShadow: 'var(--shadow-lg)',
-    border: '1px solid var(--border-subtle)',
-    backdropFilter: 'blur(16px)',
-    position: 'relative',
-    zIndex: 1,
-  },
-  logoBadge: {
-    width: '56px',
-    height: '56px',
-    margin: '0 auto 16px',
-    borderRadius: '16px',
-    background: 'rgba(99, 102, 241, 0.12)',
-    border: '1px solid rgba(99, 102, 241, 0.25)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 8px 20px -4px rgba(99, 102, 241, 0.25)',
-  },
-  title: {
-    margin: '0 0 6px 0',
-    fontSize: '22px',
-    fontWeight: '700',
-    textAlign: 'center',
-    color: 'var(--text-primary)',
-    letterSpacing: '-0.02em',
-  },
-  subtitle: {
-    margin: '0 0 22px 0',
-    fontSize: '13px',
-    textAlign: 'center',
-    color: 'var(--text-secondary)',
-  },
-  error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: 'var(--danger-subtle)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: 'var(--danger)',
-    fontSize: '13px',
-    marginBottom: '18px',
-    textAlign: 'center',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '13px',
-    fontWeight: '500',
-    color: 'var(--text-secondary)',
-  },
-  input: {
-    padding: '11px 14px',
-    borderRadius: '8px',
-    background: 'var(--bg-input)',
-    border: '1px solid var(--border-input)',
-    color: 'var(--text-primary)',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'border-color 0.15s ease, background-color 0.2s ease',
-  },
-  button: {
-    padding: '13px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-    border: 'none',
-    color: '#ffffff',
-    fontSize: '14px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    marginTop: '6px',
-    boxShadow: '0 8px 20px -4px rgba(99, 102, 241, 0.4)',
-    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-  },
-  demoSection: {
-    marginTop: '24px',
-    paddingTop: '20px',
-    borderTop: '1px solid var(--border-subtle)',
-  },
-  demoHeader: {
-    textAlign: 'center',
-    marginBottom: '12px',
-  },
-  demoTitle: {
-    fontSize: '11px',
-    fontWeight: '700',
-    letterSpacing: '0.06em',
-    color: 'var(--text-muted)',
-  },
-  demoGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '8px',
-  },
-  demoBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '8px 10px',
-    borderRadius: '8px',
-    background: 'var(--bg-input)',
-    border: '1px solid var(--border-subtle)',
-    color: 'var(--text-primary)',
-    fontSize: '12px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-  },
-  footer: {
-    marginTop: '22px',
-    fontSize: '13px',
-    textAlign: 'center',
-    color: 'var(--text-secondary)',
-  },
-  link: {
-    color: 'var(--primary)',
-    textDecoration: 'none',
-    fontWeight: '500',
-  },
-};

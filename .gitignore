@@ -4,7 +4,14 @@ target/
 !**/src/test/**/target/
 .kotlin
 .env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.env
+*.env.*
+!.env.example
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
